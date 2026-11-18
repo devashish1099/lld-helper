@@ -85,6 +85,8 @@ You can open and edit these folders with any other tool. LLD Studio reloads chan
 4. **Implement** (`Alt+1`): use the explorer toolbar or right-click menu to add classes and packages. Autosave runs on every edit.
 5. **Run** (`Ctrl+Enter` / `F5`): pick the main class next to Run. While a program runs, type its input in the `stdin>` box.
 6. **Review**: in the AI panel, the *Review* menu offers design, SOLID, edge-case and debug actions. Use the paperclip to attach files.
+7. **Walk the interviewer through your code**: in the *Interviewer* tab, tick the open file or *whole project*, or attach files, and the interviewer reviews your solution in character (staged problems reveal their next part once you're done).
+8. **Get rated by an external AI**: in the Files toolbar, *Copy whole attempt* (clipboard) or *Download whole attempt* (.md) bundles a rating prompt, the problem, your clarification Q&A, notes, pseudocode, code and interviewer chat into one Markdown document. Paste or upload it into ChatGPT, Claude or any other chatbot. Hidden interviewer notes and untouched template files are left out.
 
 ### AI providers
 

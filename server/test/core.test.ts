@@ -157,10 +157,53 @@ describe('ContextManager', () => {
     const r2 = cm.build('chat', problem, [], f, { activeFile: 'src/main/java/Main.java', includeActiveFile: true });
     expect(r2.includedFiles).toEqual(['src/main/java/Main.java']);
   });
+  it('shows the interviewer only shared files, and never files for clarification answers', () => {
+    expect(cm.build('interviewer', problem, [], f, {}).includedFiles).toEqual([]);
+    const shared = cm.build('interviewer', problem, [], f, { activeFile: 'src/main/java/Main.java', includeActiveFile: true });
+    expect(shared.includedFiles).toEqual(['src/main/java/Main.java']);
+    expect(shared.text).toContain('class Main {}');
+    const answer = cm.build('interviewer_answer', problem, [], f, { activeFile: 'src/main/java/Main.java', includeActiveFile: true, attachedFiles: ['src/main/java/Big.java'] });
+    expect(answer.includedFiles).toEqual([]);
+  });
+  it('sends the whole project only when asked', () => {
+    expect(cm.build('interviewer', problem, [], f, {}).includedFiles).toEqual([]);
+    const r = cm.build('interviewer', problem, [], f, { includeProject: true });
+    expect(r.includedFiles).toContain('pseudocode/solution.pseudo');
+    // Every Java file is sent or reported as truncated (the fixture's Big.java exceeds the budget).
+    expect([...r.includedFiles, ...r.truncated]).toEqual(expect.arrayContaining(['src/main/java/Main.java', 'src/main/java/Big.java']));
+  });
   it('includes pseudocode for pseudo modes and truncates over budget', () => {
     const r = cm.build('compare_impl', problem, [], f, {});
     expect(r.includedFiles[0]).toBe('pseudocode/solution.pseudo');
     expect(r.truncated).toContain('src/main/java/Big.java');
     expect(r.text).toContain('[truncated');
+  });
+});
+
+describe('attempt export', () => {
+  it('bundles problem, clarifications, edited files and interviewer chat without hidden notes or untouched templates', async () => {
+    const { buildAttemptMarkdown } = await import('../src/problems/AttemptExport.js');
+    const { ProjectManager } = await import('../src/projects/ProjectManager.js');
+    const pmgr = new ProjectManager(path.join(tmp, 'export-ws'));
+    pmgr.scaffold('sw', 'Splitwise', 'Split bills');
+    const files = pmgr.fs('sw');
+    files.write('src/main/java/models/User.java', 'record User(String id, String name) {}');
+    const problem: ProblemRow = {
+      id: 'x', slug: 'sw', title: 'Splitwise', description: 'Split bills', functional_reqs: '- add expense', non_functional_reqs: '',
+      interviewer_notes: '- SECRET part 2', sample: 1, created_at: '', updated_at: '',
+    };
+    const md = buildAttemptMarkdown(
+      problem,
+      [{ id: 'c', problem_id: 'x', category: 'Scope', question: 'Groups?', response: 'Later', status: 'answered', source: 'user', sort: 1, created_at: '', updated_at: '' } as any],
+      [{ id: 'm', problem_id: 'x', thread: 'interviewer', role: 'user', content: 'Here is my design', mode: 'interviewer', created_at: '' } as any],
+      files,
+    );
+    expect(md).toMatch(/^You are a senior engineer/);
+    expect(md).toContain('record User(String id, String name)');
+    expect(md).toContain('Groups?');
+    expect(md).toContain('**Candidate:** Here is my design');
+    expect(md).not.toContain('SECRET');
+    expect(md).not.toContain('### design.md'); // untouched template
+    expect(md).not.toContain('### src/main/java/Main.java');
   });
 });

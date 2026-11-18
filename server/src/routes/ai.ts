@@ -29,6 +29,7 @@ export function registerAiRoutes(app: FastifyInstance, s: Services) {
     const ctx = s.context.build(mode, problem, s.db.listClarifications(problem.id), files, {
       activeFile: b.activeFile,
       includeActiveFile: !!b.includeActiveFile,
+      includeProject: !!b.includeProject,
       attachedFiles: Array.isArray(b.attachedFiles) ? b.attachedFiles : [],
       pseudoFile: b.pseudoFile,
       runOutput: b.runOutput,

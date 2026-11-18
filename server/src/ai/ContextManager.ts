@@ -5,6 +5,8 @@ import type { AIMode } from './prompts.js';
 export interface ContextRequest {
   activeFile?: string;
   includeActiveFile?: boolean;
+  /** Send every Java file (and the pseudocode), not just the open/attached ones. */
+  includeProject?: boolean;
   attachedFiles?: string[];
   pseudoFile?: string;
   runOutput?: string;
@@ -53,7 +55,8 @@ export class ContextManager {
       parts.push('### Clarification questions asked so far\n(none yet)');
     }
 
-    if (mode === 'interviewer' || mode === 'interviewer_answer') return { text: parts.join('\n\n'), includedFiles: [], truncated: [] };
+    // Clarification answers never need code. The interviewer chat only sees files the candidate chose to share.
+    if (mode === 'interviewer_answer') return { text: parts.join('\n\n'), includedFiles: [], truncated: [] };
 
     const addFile = (path: string, label: string) => {
       if (included.includes(path)) return;
@@ -85,7 +88,8 @@ export class ContextManager {
     for (const f of req.attachedFiles ?? []) addFile(f, 'Attached file');
 
     const javaFiles = files.listFiles((p) => p.endsWith('.java'));
-    if (JAVA_PROJECT_MODES.has(mode)) for (const f of javaFiles) addFile(f, 'Java source');
+    if (req.includeProject) for (const f of files.listFiles((p) => p.endsWith('.pseudo'))) addFile(f, 'Pseudocode');
+    if (JAVA_PROJECT_MODES.has(mode) || req.includeProject) for (const f of javaFiles) addFile(f, 'Java source');
     if (javaFiles.length) parts.push(`### Java files in the project\n${javaFiles.map((f) => `- ${f}`).join('\n')}`);
 
     if (req.runOutput?.trim()) {

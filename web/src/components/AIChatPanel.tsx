@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Bot, Send, Square, Trash2, Paperclip, X, Sparkles, UserRound, FileCode2, Wand2, ChevronDown, Theater, KeyRound } from 'lucide-react';
+import { Bot, Send, Square, Trash2, Paperclip, X, Sparkles, UserRound, FileCode2, Wand2, ChevronDown, Theater, KeyRound, FolderTree } from 'lucide-react';
 import { api, streamAi, type ChatMessage, type ProviderId } from '../api/client';
 import { useStore, allFiles, errorMessage } from '../state/store';
 import { flushAll } from '../state/actions';
@@ -49,6 +49,7 @@ export function AIChatPanel() {
   const [messages, setMessages] = useState<Record<Thread, ChatMessage[]>>({ assistant: [], interviewer: [] });
   const [input, setInput] = useState('');
   const [includeActive, setIncludeActive] = useState(true);
+  const [includeProject, setIncludeProject] = useState(false);
   const [streaming, setStreaming] = useState<Streaming | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [showActions, setShowActions] = useState(false);
@@ -109,6 +110,7 @@ export function AIChatPanel() {
             provider: st.settings?.aiProvider,
             activeFile: st.activeTab ?? undefined,
             includeActiveFile: includeActive,
+            includeProject,
             attachedFiles: st.aiAttachments,
             pseudoFile: (extra.pseudoFile as string) ?? st.activePseudo ?? undefined,
             runOutput: mode === 'debug_error' ? st.lastRunOutput : (extra.runOutput as string | undefined),
@@ -137,7 +139,7 @@ export function AIChatPanel() {
       if (mode === 'java_to_pseudo') void savePseudoFromText(full);
       if (mode === 'suggest_questions') showSuggestions(full);
     },
-    [problem, streaming, includeActive, toast],
+    [problem, streaming, includeActive, includeProject, toast],
   );
 
   // Requests from other panels (clarification, pseudocode).
@@ -202,7 +204,7 @@ export function AIChatPanel() {
 
       {thread === 'interviewer' && (
         <div className="shrink-0 border-b border-line bg-warning/10 px-3 py-1.5 text-[11.5px] text-warning">
-          Interviewer simulation is on. Ask clarification questions; answers are realistic and won't reveal the solution.
+          Interviewer simulation is on. Ask clarification questions or share your code to walk through it; the interviewer won't reveal or write the solution.
         </div>
       )}
 
@@ -235,7 +237,7 @@ export function AIChatPanel() {
               <>
                 <Theater className="mx-auto mb-2" size={22} strokeWidth={1.5} />
                 You're interviewing for: <b>{problem?.title}</b>.<br />
-                Start by asking clarification questions.
+                Start by asking clarification questions. Later, share the open file or attach files to walk the interviewer through your code.
               </>
             )}
           </div>
@@ -258,11 +260,14 @@ export function AIChatPanel() {
       </div>
 
       <div className="shrink-0 border-t border-line p-2">
-        {thread === 'assistant' && (
-          <div className="mb-1.5 flex flex-wrap items-center gap-1">
-            <label className="flex cursor-pointer items-center gap-1 rounded px-1 text-[11px] text-muted" title="Send the currently open file as context">
+        <div className="mb-1.5 flex flex-wrap items-center gap-1">
+            <label className="flex cursor-pointer items-center gap-1 rounded px-1 text-[11px] text-muted" title={thread === 'interviewer' ? 'Show the currently open file to the interviewer' : 'Send the currently open file as context'}>
               <input type="checkbox" checked={includeActive} onChange={(e) => setIncludeActive(e.target.checked)} />
               <FileCode2 size={12} /> {activeTab ? activeTab.split('/').pop() : 'open file'}
+            </label>
+            <label className="flex cursor-pointer items-center gap-1 rounded px-1 text-[11px] text-muted" title="Send every Java file and the pseudocode (large projects are truncated to fit the context budget)">
+              <input type="checkbox" checked={includeProject} onChange={(e) => setIncludeProject(e.target.checked)} />
+              <FolderTree size={12} /> whole project
             </label>
             {aiAttachments.map((f) => (
               <span key={f} className="flex items-center gap-1 rounded bg-active px-1.5 py-0.5 text-[11px]" title={f}>
@@ -298,6 +303,7 @@ export function AIChatPanel() {
                 </div>
               )}
             </div>
+            {thread === 'assistant' && (
             <div className="relative ml-auto">
               <button className="btn !px-1 !py-0.5 text-[11px]" onClick={() => setShowActions(!showActions)} disabled={!!streaming}>
                 <Wand2 size={11} /> Review <ChevronDown size={11} />
@@ -319,13 +325,13 @@ export function AIChatPanel() {
                 </div>
               )}
             </div>
-          </div>
-        )}
+            )}
+        </div>
         <div className="flex items-end gap-1.5">
           <textarea
             className="max-h-40 min-h-[38px] flex-1 resize-none px-2 py-1.5 text-[13px]"
             rows={Math.min(6, Math.max(1, input.split('\n').length))}
-            placeholder={thread === 'interviewer' ? 'Ask the interviewer a clarification question…' : 'Ask about your design, Java, patterns… (Enter to send, Shift+Enter newline)'}
+            placeholder={thread === 'interviewer' ? 'Talk to the interviewer: clarify requirements, walk through your code, ask what comes next…' : 'Ask about your design, Java, patterns… (Enter to send, Shift+Enter newline)'}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {

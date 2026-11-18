@@ -149,6 +149,12 @@ export const api = {
   upload: (id: string, files: { path: string; contentBase64: string }[]) =>
     request<{ written: number; skipped: string[] }>('POST', `/api/problems/${id}/fs/upload`, { files }),
   exportUrl: (id: string) => `/api/problems/${id}/export`,
+  attemptUrl: (id: string) => `/api/problems/${id}/export.md?download=1`,
+  attemptMarkdown: async (id: string) => {
+    const res = await fetch(`/api/problems/${id}/export.md`);
+    if (!res.ok) throw new ApiError(`Export failed (${res.status})`, res.status);
+    return res.text();
+  },
 
   mainClasses: (id: string) => request<{ className: string; file: string }[]>('GET', `/api/problems/${id}/main-classes`),
   check: (id: string) => request<{ success: boolean; diagnostics: Diagnostic[] }>('POST', `/api/problems/${id}/check`, {}),
@@ -172,6 +178,7 @@ export interface AiChatRequest {
   provider?: string;
   activeFile?: string;
   includeActiveFile?: boolean;
+  includeProject?: boolean;
   attachedFiles?: string[];
   pseudoFile?: string;
   runOutput?: string;

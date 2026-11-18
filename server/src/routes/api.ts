@@ -10,6 +10,7 @@ import { extractProjectSymbols } from '../completion/ProjectSymbols.js';
 import { CLARIFICATION_CATEGORIES } from '../ai/prompts.js';
 import { PROVIDER_IDS } from '../ai/AIProviderFactory.js';
 import { claudeCodeStatus } from '../ai/ClaudeCodeProvider.js';
+import { buildAttemptMarkdown } from '../problems/AttemptExport.js';
 
 type Body = Record<string, any>;
 const str = (v: unknown, name: string) => {
@@ -182,6 +183,14 @@ export function registerApiRoutes(app: FastifyInstance, s: Services) {
       files.writeBuffer(rel, Buffer.from(str(f.contentBase64, 'contentBase64'), 'base64'));
     }
     return { ok: true, written: list.length - skipped.length, skipped };
+  });
+  /** The whole attempt as one Markdown document, for rating in an external chatbot. ?download=1 saves it as a file. */
+  app.get('/api/problems/:id/export.md', async (req, reply) => {
+    const { problem, files } = problemFiles((req.params as Body).id);
+    const md = buildAttemptMarkdown(problem, s.db.listClarifications(problem.id), s.db.listMessages(problem.id, 'interviewer'), files);
+    reply.header('Content-Type', 'text/markdown; charset=utf-8');
+    if ((req.query as Body).download === '1') reply.header('Content-Disposition', `attachment; filename="${problem.slug}-attempt.md"`);
+    return reply.send(md);
   });
   app.get('/api/problems/:id/export', async (req, reply) => {
     const { problem, files } = problemFiles((req.params as Body).id);

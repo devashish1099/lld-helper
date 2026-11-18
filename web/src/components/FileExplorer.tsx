@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import {
-  ChevronRight, ChevronDown, FilePlus, FolderPlus, Package, RefreshCw, ChevronsDownUp, Upload, Download,
+  ChevronRight, ChevronDown, FilePlus, FolderPlus, Package, RefreshCw, ChevronsDownUp, Upload, Download, ClipboardCopy, FileDown,
   FileCode, FileText, File, Folder, FolderOpen, Coffee, Braces, Pencil, Trash2, Copy, Paperclip, ListTree,
 } from 'lucide-react';
 import { api, fileToBase64, type TreeNode } from '../api/client';
@@ -280,6 +280,21 @@ export function FileExplorer() {
           </button>
           <a className="icon-btn" title="Export project as .zip" href={api.exportUrl(pid)} download>
             <Download size={14} />
+          </a>
+          <button
+            className="icon-btn"
+            title="Copy whole attempt for an external AI (ChatGPT, Claude...) to rate: problem, clarifications, notes, code and interviewer chat, with a rating prompt"
+            onClick={() =>
+              run(async () => {
+                await navigator.clipboard.writeText(await api.attemptMarkdown(pid));
+                toast('Attempt copied. Paste it into ChatGPT or Claude to get it rated.', 'success');
+              })
+            }
+          >
+            <ClipboardCopy size={14} />
+          </button>
+          <a className="icon-btn" title="Download whole attempt as Markdown (to upload to an external AI for rating)" href={api.attemptUrl(pid)} download>
+            <FileDown size={14} />
           </a>
           <button className="icon-btn" title="Refresh" onClick={() => run(refreshTree)}>
             <RefreshCw size={13} />

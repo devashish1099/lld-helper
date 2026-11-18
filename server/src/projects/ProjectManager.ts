@@ -7,14 +7,14 @@ export const PSEUDO_DIR = 'pseudocode';
 export const DESIGN_FILE = 'design.md';
 export const NOTES_FILE = 'notes.md';
 
-const mainTemplate = (title: string) => `public class Main {
+export const mainTemplate = (title: string) => `public class Main {
     public static void main(String[] args) {
         System.out.println("${title.replace(/"/g, '\\"')} - LLD Studio");
     }
 }
 `;
 
-const pseudoTemplate = (title: string) => `# ${title} - Pseudocode
+export const pseudoTemplate = (title: string) => `# ${title} - Pseudocode
 // Work out entities, responsibilities and core flows before writing Java.
 
 CLASS Example
@@ -29,7 +29,7 @@ CLASS Example
 END CLASS
 `;
 
-const designTemplate = (title: string) => `# ${title} - Design Notes
+export const designTemplate = (title: string) => `# ${title} - Design Notes
 
 ## Entities
 
